@@ -1,16 +1,39 @@
 from models import Bullet, Tank
+import random
 
 class Session:
-    def __init__(self):
+    def __init__(self, map):
         self.tanks = {}
         self.bullets = {}
+        self.map = map
+        self.tile_size = 40
 
         self.tick_rate = 30
         self.size_x = 800
         self.size_y = 600
 
-    def add_tank(self, x: int, y: int, direction: int, name: str):
-        tank = Tank(x, y, direction, name)
+        self.spawn_points = []
+        for y, row in enumerate(map):
+            for x, tile in enumerate(row):
+                if tile == "S":
+                    self.spawn_points.append((x*self.tile_size + self.tile_size/2,
+                                              y*self.tile_size + self.tile_size/2))
+
+    def add_tank(self, name: str, tank_type: str):
+        # выбираем случайную свободную точку
+        free_points = self.spawn_points.copy()
+        
+        # исключаем точки, занятые другими танками
+        for tank in self.tanks.values():
+            free_points = [p for p in free_points if (abs(p[0]-tank.x) > tank.size and abs(p[1]-tank.y) > tank.size)]
+
+        if not free_points:
+            # если все точки заняты — спавним в центре
+            x, y = self.size_x / 2, self.size_y / 2
+        else:
+            x, y = random.choice(free_points)
+
+        tank = Tank(x, y, 0, name, tank_type)
         self.tanks[tank.id] = tank
 
         return tank.id
@@ -40,6 +63,35 @@ class Session:
             return True
         
         return False
+    
+    def is_passable(self, x, y, buffer=0):
+        """
+        Проверка, можно ли пройти в координату (x, y)
+        buffer = половина размера танка, чтобы не оставалось щелей
+        """
+        tile_x = int(x // self.tile_size)
+        tile_y = int(y // self.tile_size)
+
+        if tile_y < 0 or tile_y >= len(self.map):
+            return False
+        if tile_x < 0 or tile_x >= len(self.map[0]):
+            return False
+
+        # проверяем все тайлы, которые может занимать танк с радиусом buffer
+        left = int((x - buffer) // self.tile_size)
+        right = int((x + buffer) // self.tile_size)
+        top = int((y - buffer) // self.tile_size)
+        bottom = int((y + buffer) // self.tile_size)
+
+        for ty in range(top, bottom+1):
+            for tx in range(left, right+1):
+                if 0 <= ty < len(self.map) and 0 <= tx < len(self.map[0]):
+                    if self.map[ty][tx] in ("#", "~"):
+                        return False
+                else:
+                    return False  # за пределами карты тоже нельзя
+
+        return True
 
     def serialize(self):
         return {
@@ -51,9 +103,21 @@ class Session:
         to_remove = []
         for bullet in self.bullets.values():
             bullet.move()
-            if bullet.x < 0 or bullet.x > self.size_x or bullet.y < 0 or bullet.y > self.size_y:
-                self.remove_bullet(bullet)
 
+            # проверка выхода за пределы карты
+            if bullet.x < 0 or bullet.x > self.size_x or bullet.y < 0 or bullet.y > self.size_y:
+                to_remove.append(bullet.id)
+                continue
+
+            # проверка столкновения со стеной
+            tile_x = int(bullet.x // self.tile_size)
+            tile_y = int(bullet.y // self.tile_size)
+            if 0 <= tile_y < len(self.map) and 0 <= tile_x < len(self.map[0]):
+                if self.map[tile_y][tile_x] == "#":
+                    to_remove.append(bullet.id)
+                    continue
+
+            # проверка попадания в танки
             for tank in self.tanks.values():
                 if self.check_collision(bullet, tank):
                     tank.take_damage(bullet.damage)
@@ -75,4 +139,20 @@ class Session:
             dy = int(state["down"]) - int(state["up"])
 
             if dx != 0 or dy != 0:
-                tank.move(dx, dy)
+                new_x = tank.x + dx * tank.speed
+                new_y = tank.y + dy * tank.speed
+                half = tank.size / 2
+
+                if self.is_passable(new_x, new_y, buffer=half):
+                    tank.x = new_x
+                    tank.y = new_y
+                else:
+                    # проверяем только по X
+                    if self.is_passable(new_x, tank.y, buffer=half):
+                        tank.x = new_x
+                    # проверяем только по Y
+                    if self.is_passable(tank.x, new_y, buffer=half):
+                        tank.y = new_y
+
+            turret_dir = state["turret"]
+            tank.rotate_turret(turret_dir)

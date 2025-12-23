@@ -1,28 +1,49 @@
 from math import cos, radians, sin
 
+import time
 
 class Tank:
     _id_counter = 1
 
-    def __init__(self, x: int, y: int, direction: int, name: str):
+    def __init__(self, x: int, y: int, direction: int, name: str, tank_type: str):
         self.id = Tank._id_counter
         Tank._id_counter += 1
 
+
         self.x = x
         self.y = y
-        self.hp = 100
-        self.speed = 5
-        self.direction = direction  # 0-360 градусов, куда смотрит танк
         self.is_alive = True
-        self.size = 100
+        self.direction = direction  # 0-360 градусов, куда смотрит танк
         self.name = name
-        self.barrel_length = 70  # длина ствола для выстрела
+        self.tank_type = tank_type
+        self.next_shot_time = 0
 
-    def move(self, dx: int, dy: int):
-        if not self.is_alive:
-            return
-        self.x += dx * self.speed
-        self.y += dy * self.speed
+        if tank_type == "medium":
+            self.hp = 100
+            self.speed = 5
+            self.size = 38
+            self.barrel_length = 30  # длина ствола для выстрела
+            self.rotation_speed = 5  # скорость поворота танка
+            self.fire_rate = 0.5  # секунд между выстрелами
+
+        elif tank_type == "heavy":
+            self.hp = 150
+            self.speed = 3
+            self.size = 76
+            self.barrel_length = 60  # длина ствола для выстрела
+            self.rotation_speed = 3  # скорость поворота танка
+            self.fire_rate = 1.0  # секунд между выстрелами
+
+        elif tank_type == "light":
+            self.hp = 75
+            self.speed = 7
+            self.size = 30
+            self.barrel_length = 20  # длина ствола для выстрела
+            self.rotation_speed = 7  # скорость поворота танка
+            self.fire_rate = 0.2  # секунд между выстрелами
+
+    def can_shoot(self):
+        return time.time() >= self.next_shot_time
 
 
     def take_damage(self, dmg: int):
@@ -34,14 +55,25 @@ class Tank:
             self.is_alive = False
 
     def shoot(self):
-        if not self.is_alive:
+        if not self.is_alive or not self.can_shoot():
             return None
         # Возвращаем координаты выстрела, чтобы сервер создал пулю
 
         spawn_x = self.x + cos(radians(self.direction)) * self.barrel_length
         spawn_y = self.y + sin(radians(self.direction)) * self.barrel_length
 
+        self.next_shot_time = time.time() + self.fire_rate
+
         return (spawn_x, spawn_y, self.direction)
+
+    def rotate_turret(self, angle: float):
+        if not self.is_alive:
+            return
+        
+        if angle == 'CW':
+            self.direction += self.rotation_speed
+        elif angle == 'CCW':
+            self.direction -= self.rotation_speed
 
     def serialize(self):
         # для отправки клиенту
@@ -53,7 +85,8 @@ class Tank:
             "size": self.size,
             "hp": self.hp,
             "alive": self.is_alive,
-            "name": self.name
+            "name": self.name,
+            "barrel_length": self.barrel_length
         }
     
 

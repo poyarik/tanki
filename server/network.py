@@ -5,7 +5,7 @@ from protocol import encode, decode
 from queue import Queue
 
 class ServerNetwork:
-    def __init__(self, host="127.0.0.1", port=5555, session=None):
+    def __init__(self, host="0.0.0.0", port=4444, session=None):
         self.host = host
         self.port = port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,7 +33,10 @@ class ServerNetwork:
         buffer = ""
         try:
             while True:
-                data = conn.recv(1024)
+                try:
+                    data = conn.recv(1024)
+                except ConnectionResetError:
+                    break
                 if not data:
                     break
                 buffer += data.decode()
@@ -68,14 +71,17 @@ class ServerNetwork:
         cmd = message["type"]
         if cmd == "join":
             self.clients[conn]["name"] = message.get("name", "Unknown")
-            tank_id = self.session.add_tank(200, 200, 0, self.clients[conn]["name"])
+            print(message.get("tank"))
+            tank_id = self.session.add_tank(self.clients[conn]["name"], message.get("tank", "light"))
             self.clients[conn]["tank"] = tank_id
             self.clients[conn]["input_state"] = {
                 "up": False,
                 "down": False,
                 "left": False,
-                "right": False
+                "right": False,
+                "turret": 'IDLE',
             }
+            conn.send(encode({"type": "join", "tank_id": tank_id, "map": self.session.map}))
 
 
         self.message_queue.put((conn, message))

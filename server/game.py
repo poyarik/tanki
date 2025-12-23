@@ -31,8 +31,14 @@ class Session:
 
     def check_collision(self, bullet, tank):
         # простая проверка "попадания"
-        if abs(bullet.x - tank.x) < tank.size and abs(bullet.y - tank.y) < tank.size:
+        half = tank.size / 2
+
+        if (
+            abs(bullet.x - tank.x) <= half and
+            abs(bullet.y - tank.y) <= half
+        ):
             return True
+        
         return False
 
     def serialize(self):
@@ -41,7 +47,8 @@ class Session:
             "bullets": [bullet.serialize() for bullet in self.bullets.values()],
         }
 
-    def update(self):
+    def update(self, clients):
+        to_remove = []
         for bullet in self.bullets.values():
             bullet.move()
             if bullet.x < 0 or bullet.x > self.size_x or bullet.y < 0 or bullet.y > self.size_y:
@@ -50,5 +57,22 @@ class Session:
             for tank in self.tanks.values():
                 if self.check_collision(bullet, tank):
                     tank.take_damage(bullet.damage)
-                    self.remove_bullet(bullet)
+                    to_remove.append(bullet.id)
                     break
+
+        for bullet_id in to_remove:
+            self.remove_bullet(bullet_id)
+
+        for conn, info in clients.items():
+            tank_id = info["tank"]
+            tank = self.tanks.get(tank_id)
+            if not tank or not tank.is_alive:
+                continue
+
+            state = info["input_state"]
+
+            dx = int(state["right"]) - int(state["left"])
+            dy = int(state["down"]) - int(state["up"])
+
+            if dx != 0 or dy != 0:
+                tank.move(dx, dy)

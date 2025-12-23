@@ -63,12 +63,19 @@ class ServerNetwork:
                 self.send(conn, message)
 
     def on_message(self, conn, message: dict):
-        if "cmd" not in message:
+        if "type" not in message:
             return
-        cmd = message["cmd"]
+        cmd = message["type"]
         if cmd == "join":
             self.clients[conn]["name"] = message.get("name", "Unknown")
-            tank_id = self.session.add_tank(0, 0, 0, self.clients[conn]["name"])
+            tank_id = self.session.add_tank(200, 200, 0, self.clients[conn]["name"])
             self.clients[conn]["tank"] = tank_id
+            self.clients[conn]["input_state"] = {
+                "up": False,
+                "down": False,
+                "left": False,
+                "right": False
+            }
+
 
         self.message_queue.put((conn, message))

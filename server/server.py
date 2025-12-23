@@ -14,25 +14,19 @@ server.start()
 while True:
     while not server.message_queue.empty():
         conn, message = server.message_queue.get()
-        print("Сообщение от", server.clients[conn], ":", message)
 
-        if message.get("cmd") in move_commands:
+        if message["type"] == "input":
+            server.clients[conn]["input_state"] = message["state"]
+
+        elif message["type"] == "shoot":
             tank_id = server.clients[conn]["tank"]
-            if tank_id is not None:
-                tank = session.tanks.get(tank_id)
-                if tank:
-                    if message["cmd"] == "up":
-                        tank.move(0, -1)
-                    elif message["cmd"] == "down":
-                        tank.move(0, 1)
-                    elif message["cmd"] == "left":
-                        tank.move(-1, 0)
-                    elif message["cmd"] == "right":
-                        tank.move(1, 0)
-                    elif message["cmd"] == "shoot":
-                        session.add_bullet(*tank.shoot())
+            tank = session.tanks.get(tank_id)
+            if tank:
+                bullet = tank.shoot()
+                if bullet:
+                    session.add_bullet(*bullet)
 
-    session.update()
+    session.update(server.clients)
     state = session.serialize()
-    print(state)
-    time.sleep(1)
+    server.broadcast({"type": "state", "data": state})
+    time.sleep(1/session.tick_rate)

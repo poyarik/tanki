@@ -14,8 +14,9 @@ class Tank:
         self.speed = 5
         self.direction = direction  # 0-360 градусов, куда смотрит танк
         self.is_alive = True
-        self.size = 10
+        self.size = 100
         self.name = name
+        self.barrel_length = 70  # длина ствола для выстрела
 
     def move(self, dx: int, dy: int):
         if not self.is_alive:
@@ -36,7 +37,11 @@ class Tank:
         if not self.is_alive:
             return None
         # Возвращаем координаты выстрела, чтобы сервер создал пулю
-        return (self.x, self.y, self.direction)
+
+        spawn_x = self.x + cos(radians(self.direction)) * self.barrel_length
+        spawn_y = self.y + sin(radians(self.direction)) * self.barrel_length
+
+        return (spawn_x, spawn_y, self.direction)
 
     def serialize(self):
         # для отправки клиенту
@@ -45,6 +50,7 @@ class Tank:
             "x": self.x,
             "y": self.y,
             "direction": self.direction,
+            "size": self.size,
             "hp": self.hp,
             "alive": self.is_alive,
             "name": self.name

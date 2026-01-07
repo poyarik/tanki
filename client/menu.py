@@ -29,7 +29,7 @@ class MainMenu:
         self.settings = load_settings()
 
         self.root = tk.Tk()
-        self.root.title("Танки Оффлайн: Страшные Кони")
+        self.root.title("World Of Tangens")
         self.root.geometry("400x500")
 
         tk.Label(self.root, text="Имя игрока:").pack(pady=5)

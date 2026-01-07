@@ -1,3 +1,5 @@
+from multiprocessing import spawn
+from time import time
 from models import Bullet, Tank
 import random
 
@@ -9,8 +11,9 @@ class Session:
         self.tile_size = 40
 
         self.tick_rate = 30
-        self.size_x = 800
+        self.size_x = 1200
         self.size_y = 600
+        self.respawn_time = 5  # секунд до респауна
 
         self.spawn_points = []
         for y, row in enumerate(map):
@@ -18,8 +21,8 @@ class Session:
                 if tile == "S":
                     self.spawn_points.append((x*self.tile_size + self.tile_size/2,
                                               y*self.tile_size + self.tile_size/2))
-
-    def add_tank(self, name: str, tank_type: str):
+                    
+    def find_spawn_for_tank(self):
         # выбираем случайную свободную точку
         free_points = self.spawn_points.copy()
         
@@ -33,6 +36,10 @@ class Session:
         else:
             x, y = random.choice(free_points)
 
+        return x, y
+
+    def add_tank(self, name: str, tank_type: str):
+        x, y = self.find_spawn_for_tank()
         tank = Tank(x, y, 0, name, tank_type)
         self.tanks[tank.id] = tank
 
@@ -130,7 +137,18 @@ class Session:
         for conn, info in clients.items():
             tank_id = info["tank"]
             tank = self.tanks.get(tank_id)
-            if not tank or not tank.is_alive:
+            if not tank:
+                continue
+
+            if not tank.is_alive:
+                if time() - tank.death_time >= self.respawn_time:
+                    x, y = self.find_spawn_for_tank()
+                    if x and y:
+                        tank.x = x
+                        tank.y = y
+                        tank.hp = tank.max_hp
+                        tank.is_alive = True
+                        tank.death_time = None
                 continue
 
             state = info["input_state"]

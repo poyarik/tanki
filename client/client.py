@@ -17,7 +17,7 @@ port = int(settings["port"])
 tank = settings["tank"]
 
 root = tk.Tk()
-root.title("Танки Оффлайн: Страшные Кони")
+root.title("World Of Tangens")
 
 net = ClientNetwork(host=ip, port=port)
 net.connect()

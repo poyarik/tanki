@@ -17,9 +17,10 @@ class Tank:
         self.name = name
         self.tank_type = tank_type
         self.next_shot_time = 0
+        self.death_time = None
 
         if tank_type == "medium":
-            self.hp = 100
+            self.max_hp = 100
             self.speed = 5
             self.size = 38
             self.barrel_length = 30  # длина ствола для выстрела
@@ -27,7 +28,7 @@ class Tank:
             self.fire_rate = 0.5  # секунд между выстрелами
 
         elif tank_type == "heavy":
-            self.hp = 150
+            self.max_hp = 150
             self.speed = 3
             self.size = 76
             self.barrel_length = 60  # длина ствола для выстрела
@@ -35,16 +36,17 @@ class Tank:
             self.fire_rate = 1.0  # секунд между выстрелами
 
         elif tank_type == "light":
-            self.hp = 75
+            self.max_hp = 70
             self.speed = 7
             self.size = 30
             self.barrel_length = 20  # длина ствола для выстрела
             self.rotation_speed = 7  # скорость поворота танка
             self.fire_rate = 0.2  # секунд между выстрелами
 
+        self.hp = self.max_hp
+
     def can_shoot(self):
         return time.time() >= self.next_shot_time
-
 
     def take_damage(self, dmg: int):
         if not self.is_alive:
@@ -53,6 +55,9 @@ class Tank:
         if self.hp <= 0:
             self.hp = 0
             self.is_alive = False
+            self.death_time = time.time()
+
+
 
     def shoot(self):
         if not self.is_alive or not self.can_shoot():
@@ -100,7 +105,7 @@ class Bullet:
         self.x = x
         self.y = y
         self.direction = direction
-        self.speed = 10
+        self.speed = 15
         self.damage = 10
 
     def move(self):

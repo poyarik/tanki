@@ -26,6 +26,7 @@ class Tank:
             self.barrel_length = 30  # длина ствола для выстрела
             self.rotation_speed = 5  # скорость поворота танка
             self.fire_rate = 0.5  # секунд между выстрелами
+            self.damage = 10
 
         elif tank_type == "heavy":
             self.max_hp = 150
@@ -34,6 +35,7 @@ class Tank:
             self.barrel_length = 60  # длина ствола для выстрела
             self.rotation_speed = 3  # скорость поворота танка
             self.fire_rate = 1.0  # секунд между выстрелами
+            self.damage = 20
 
         elif tank_type == "light":
             self.max_hp = 70
@@ -42,6 +44,7 @@ class Tank:
             self.barrel_length = 20  # длина ствола для выстрела
             self.rotation_speed = 7  # скорость поворота танка
             self.fire_rate = 0.2  # секунд между выстрелами
+            self.damage = 10
 
         self.hp = self.max_hp
 
@@ -69,7 +72,7 @@ class Tank:
 
         self.next_shot_time = time.time() + self.fire_rate
 
-        return (spawn_x, spawn_y, self.direction)
+        return (spawn_x, spawn_y, self.direction, self, self.damage)
 
     def rotate_turret(self, angle: float):
         if not self.is_alive:
@@ -98,7 +101,7 @@ class Tank:
 class Bullet:
     _id_counter = 1
 
-    def __init__(self, x: int, y: int, direction: int):
+    def __init__(self, x: int, y: int, direction: int, onwner: Tank, damage=10):
         self.id = Bullet._id_counter
         Bullet._id_counter += 1
 
@@ -106,7 +109,8 @@ class Bullet:
         self.y = y
         self.direction = direction
         self.speed = 15
-        self.damage = 10
+        self.damage = damage
+        self.owner = Tank
 
     def move(self):
         self.x += self.speed * cos(radians(self.direction))

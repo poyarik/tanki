@@ -1,4 +1,3 @@
-from multiprocessing import spawn
 from time import time
 from models import Bullet, Tank
 import random
@@ -8,6 +7,7 @@ class Session:
         self.tanks = {}
         self.bullets = {}
         self.map = map
+        #self.gamemode = gamemode TODO
         self.tile_size = 40
 
         self.tick_rate = 30
@@ -49,8 +49,8 @@ class Session:
         if tank_id in self.tanks:
             del self.tanks[tank_id]
 
-    def add_bullet(self, x: int, y: int, direction: int):
-        bullet = Bullet(x, y, direction)
+    def add_bullet(self, *args):
+        bullet = Bullet(*args)
         self.bullets[bullet.id] = bullet
 
         return bullet.id
@@ -100,10 +100,19 @@ class Session:
 
         return True
 
-    def serialize(self):
+    def serialize(self, clients):
+        score = []
+        for info in clients.values():
+            score.append([info["name"], info["score"]])
+            
+        score.sort(key=lambda x: x[0])
+
+        print(score)
+
         return {
             "tanks": [tank.serialize() for tank in self.tanks.values()],
             "bullets": [bullet.serialize() for bullet in self.bullets.values()],
+            "score": score
         }
 
     def update(self, clients):
@@ -128,6 +137,11 @@ class Session:
             for tank in self.tanks.values():
                 if self.check_collision(bullet, tank):
                     tank.take_damage(bullet.damage)
+                    if not tank.is_alive:
+                        shooting_tank = bullet.owner
+                        for info in clients.values():
+                            if info["tank"] == shooting_tank.id:
+                                info["score"] += 1
                     to_remove.append(bullet.id)
                     break
 

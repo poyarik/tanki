@@ -72,6 +72,7 @@ class Renderer:
         self.draw_tanks(state.get("tanks", []))
         self.draw_bullets(state.get("bullets", []))
         self.draw_map2(self.net.map)
+        self.draw_score(state["score"])
 
     def draw_tanks(self, tanks):
         for tank in tanks:
@@ -125,3 +126,16 @@ class Renderer:
                 fill="yellow",
                 tags="dynamic"
             )
+
+    def draw_score(self, score):
+        text = ""
+        for player in score:
+            text += f"{player[0]}: {player[1]}\n"
+
+        self.canvas.create_text(
+            200, 200,
+            text=text,
+            fill="white",
+            font=("Arial", 16),
+            tags="dynamic"
+        )

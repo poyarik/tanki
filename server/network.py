@@ -71,6 +71,7 @@ class ServerNetwork:
         cmd = message["type"]
         if cmd == "join":
             self.clients[conn]["name"] = message.get("name", "Unknown")
+            self.clients[conn]["score"] = 0
             print(message.get("tank"))
             tank_id = self.session.add_tank(self.clients[conn]["name"], message.get("tank", "light"))
             self.clients[conn]["tank"] = tank_id

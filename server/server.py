@@ -34,7 +34,7 @@ while True:
                     session.add_bullet(*bullet)
 
     session.update(server.clients)
-    state = session.serialize()
+    state = session.serialize(server.clients)
     server.broadcast({"type": "state", "data": state})
     #end = time.time()
 

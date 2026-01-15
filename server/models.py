@@ -53,12 +53,15 @@ class Tank:
 
     def take_damage(self, dmg: int):
         if not self.is_alive:
-            return
+            return False
         self.hp -= dmg
         if self.hp <= 0:
             self.hp = 0
             self.is_alive = False
             self.death_time = time.time()
+
+            return True
+        return False
 
 
 
@@ -101,7 +104,7 @@ class Tank:
 class Bullet:
     _id_counter = 1
 
-    def __init__(self, x: int, y: int, direction: int, onwner: Tank, damage=10):
+    def __init__(self, x: int, y: int, direction: int, owner: Tank, damage=10):
         self.id = Bullet._id_counter
         Bullet._id_counter += 1
 
@@ -110,7 +113,7 @@ class Bullet:
         self.direction = direction
         self.speed = 15
         self.damage = damage
-        self.owner = Tank
+        self.owner = owner
 
     def move(self):
         self.x += self.speed * cos(radians(self.direction))

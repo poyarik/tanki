@@ -103,9 +103,11 @@ class Session:
     def serialize(self, clients):
         score = []
         for info in clients.values():
-            score.append([info["name"], info["score"]])
+            try:
+                score.append([info["name"], info["score"]])
+            except KeyError: continue
             
-        score.sort(key=lambda x: x[0])
+        score.sort(key=lambda x: -x[1])
 
         print(score)
 
@@ -136,8 +138,7 @@ class Session:
             # проверка попадания в танки
             for tank in self.tanks.values():
                 if self.check_collision(bullet, tank):
-                    tank.take_damage(bullet.damage)
-                    if not tank.is_alive:
+                    if tank.take_damage(bullet.damage):
                         shooting_tank = bullet.owner
                         for info in clients.values():
                             if info["tank"] == shooting_tank.id:

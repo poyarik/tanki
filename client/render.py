@@ -133,9 +133,10 @@ class Renderer:
             text += f"{player[0]}: {player[1]}\n"
 
         self.canvas.create_text(
-            200, 200,
+            50, 50,
             text=text,
             fill="white",
-            font=("Arial", 16),
-            tags="dynamic"
+            font=("Arial", 12),
+            tags="dynamic",
+            anchor=tk.NW
         )

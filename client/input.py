@@ -36,6 +36,9 @@ class InputHandler:
             # стрельба — событие, не состояние
             self.net.send({"type": "shoot"})
 
+        if key == 'p':
+            self.renderer.shake_screen()
+
         self.send_state()
 
     def on_key_release(self, event):

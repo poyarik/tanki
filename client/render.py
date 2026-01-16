@@ -1,5 +1,6 @@
 import tkinter as tk
 from math import cos, sin, radians
+import random
 
 class Renderer:
     def __init__(self, root, net, width=1200, height=600):
@@ -22,15 +23,19 @@ class Renderer:
 
 
     def draw_map1(self, map):
-        for y, row in enumerate(map):
-            for x, tile in enumerate(row):
-                if tile in ("#", "~"):
-                    color = {"#": "gray", "~": "blue"}[tile]
-                    self.canvas.create_rectangle(
-                        x*self.tile_size, y*self.tile_size,
-                        (x+1)*self.tile_size, (y+1)*self.tile_size,
-                        fill=color, outline=""
-                    )
+        try:
+            for y, row in enumerate(map):
+                for x, tile in enumerate(row):
+                    if tile in ("#", "~"):
+                        color = {"#": "gray", "~": "blue"}[tile]
+                        self.canvas.create_rectangle(
+                            x*self.tile_size, y*self.tile_size,
+                            (x+1)*self.tile_size, (y+1)*self.tile_size,
+                            fill=color, outline=""
+                        )
+        except TypeError:
+            self.root.after(10, self.draw_map1)
+            print("error")
 
     def draw_map2(self, map):
         block_size = 4  # размер блока внутри тайла (4×4)
@@ -140,3 +145,27 @@ class Renderer:
             tags="dynamic",
             anchor=tk.NW
         )
+
+    def shake_screen(self, iteration=0, distance=10, repetitions=8):
+        """
+        Асинхронная случайная тряска по осям X и Y.
+        """
+        if iteration == 0:
+            # Сохраняем исходную позицию только в самом начале
+            geo = self.root.geometry().split('+')
+            self.orig_x = int(geo[1])
+            self.orig_y = int(geo[2])
+
+        if iteration < repetitions:
+            # Генерируем случайное смещение для каждой оси в диапазоне [-distance, distance]
+            dx = random.randint(-distance, distance)
+            dy = random.randint(-distance, distance)
+            
+            self.root.geometry(f"+{self.orig_x + dx}+{self.orig_y + dy}")
+            
+            # Уменьшаем время задержки до 15-20мс для большей резкости
+            self.root.after(20, lambda: self.shake_screen(iteration + 1, distance, repetitions))
+        else:
+            # Возвращаем окно точно в центр
+            self.root.geometry(f"+{self.orig_x}+{self.orig_y}")
+

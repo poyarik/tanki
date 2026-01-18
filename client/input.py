@@ -35,9 +35,11 @@ class InputHandler:
         elif key == "space":
             # стрельба — событие, не состояние
             self.net.send({"type": "shoot"})
+            self.renderer.shake_screen(7)
 
-        if key == 'p':
-            self.renderer.shake_screen()
+        elif key == 'p':
+            self.renderer.hit_effect()
+            
 
         self.send_state()
 

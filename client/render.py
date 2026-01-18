@@ -12,6 +12,7 @@ class Renderer:
         self.rendered = False
 
         self.player_tank = None
+        self.last_hp = None
 
         self.canvas = tk.Canvas(
             root,
@@ -84,11 +85,25 @@ class Renderer:
             if tank['id'] == self.net.tank_id:
                 self.player_tank = tank
 
+                if not self.last_hp and tank["hp"] != 0:
+                    self.last_hp = tank["hp"]
+
+                if tank["hp"] == 0:
+                    self.last_hp = None
+
+                if tank["hp"] < self.last_hp:
+                    self.hit_effect()
+                    self.shake_screen(15)
+                    self.last_hp = tank["hp"]
+
+
+
             x = tank["x"]
             y = tank["y"]
             size = tank.get("size", 10)
             name = tank.get("name", "")
             hp = tank["hp"]
+
 
             self.canvas.create_rectangle(
                 x - size // 2,
@@ -146,7 +161,7 @@ class Renderer:
             anchor=tk.NW
         )
 
-    def shake_screen(self, iteration=0, distance=10, repetitions=8):
+    def shake_screen(self, distance=10, repetitions=8, iteration=0):
         """
         Асинхронная случайная тряска по осям X и Y.
         """
@@ -163,9 +178,11 @@ class Renderer:
             
             self.root.geometry(f"+{self.orig_x + dx}+{self.orig_y + dy}")
             
-            # Уменьшаем время задержки до 15-20мс для большей резкости
-            self.root.after(20, lambda: self.shake_screen(iteration + 1, distance, repetitions))
+            self.root.after(20, lambda: self.shake_screen(distance, repetitions, iteration + 1))
         else:
             # Возвращаем окно точно в центр
             self.root.geometry(f"+{self.orig_x}+{self.orig_y}")
+
+    def hit_effect(self):
+        self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#FF0000cd ") #TODO
 
